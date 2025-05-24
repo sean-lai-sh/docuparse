@@ -1,9 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Set the custom app directory
-  experimental: {
-    appDir: './src/app',
-  },
   images: {
     remotePatterns: [
       {
