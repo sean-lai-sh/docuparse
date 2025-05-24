@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import AgentPanel from './AgentPanel';
 
 // Dynamically import DOMHighlighter with SSR disabled
 const DOMHighlighter = dynamic(
@@ -322,7 +323,8 @@ const PaperViewer: React.FC<PaperViewerProps> = ({
   }
 
   return (
-    <div className="w-full relative max-w-full overflow-hidden">
+    <div className="w-full relative max-w-full ">
+      <AgentPanel/>
       {/* Inspector controls */}
       <div className="fixed bottom-4 right-4 z-50 flex gap-2">
         <button

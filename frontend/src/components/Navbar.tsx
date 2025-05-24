@@ -42,7 +42,7 @@ const Navbar: React.FC = () => {
 
           <div className="hidden md:block">
             <button className="bg-blue-600 text-white px-6 py-2 rounded-full font-medium hover:bg-blue-700 transition-all">
-              Get Extension
+              Get Started
             </button>
           </div>
 

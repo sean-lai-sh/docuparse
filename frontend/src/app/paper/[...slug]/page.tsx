@@ -1,3 +1,4 @@
+import AgentPanel from '@/components/AgentPanel';
 import dynamic from 'next/dynamic'
 
 interface PageProps {
@@ -16,7 +17,7 @@ export default function Page({ params }: PageProps) {
   const { slug } = params;
   
   return (
-    <main className="min-h-screen w-screen flex"> 
+    <main className="min-h-screen w-screen"> 
         <Dympaper slug={`${slug}`}/>
     </main>
   );

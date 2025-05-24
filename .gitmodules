@@ -1,0 +1,3 @@
+[submodule "backend/dex-mcp"]
+	path = backend/dex-mcp
+	url = https://github.com/kevinrgu/dex-mcp.git
