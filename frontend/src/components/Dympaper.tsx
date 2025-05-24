@@ -15,6 +15,7 @@ export default function DymPaper({ slug }: DymPaperProps) {
     const [prevContent, setprevContent] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>('');
+    const [htmlContent, setHtmlContent] = useState<string>('');
 
     async function addContext(text: string, elementId: string | null) {
         console.log('Hovered Text:', text);
@@ -59,23 +60,23 @@ export default function DymPaper({ slug }: DymPaperProps) {
                 // Construct the PDF URL based on your slug
                 
                 
-                // const response = await fetch('/api/pdfparser', {
-                //     method: 'POST',
-                //     headers: {
-                //         'Content-Type': 'application/json',
-                //     },
-                //     body: JSON.stringify({ pdfUrl :slug }),
-                // });
+                const response = await fetch('/api/pdfparser', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ pdfUrl :slug }),
+                });
                 
-                // const data = await response.json();
+                const data = await response.json();
                 
-                // if (data.error) {
-                //     setError(data.message || 'Error converting PDF to HTML');
-                // } else if (data.url) {
-                //     setHtmlContent(data.url);
-                // } else {
-                //     setError('No HTML content received');
-                // }
+                if (data.error) {
+                    setError(data.message || 'Error converting PDF to HTML');
+                } else if (data.url) {
+                    setHtmlContent(data.url);
+                } else {
+                    setError('No HTML content received');
+                }
             } catch (err) {
                 setError('Failed to convert PDF: ' + (err instanceof Error ? err.message : String(err)));
             } finally {
@@ -112,7 +113,7 @@ export default function DymPaper({ slug }: DymPaperProps) {
     return (
         <div className="w-screen pt-[20vh] min-h-screen">
             <PaperViewer 
-                paperPath={`/samplepaper.htm`}
+                paperPath={`${htmlContent ? htmlContent : '/sample-paper.html'}`}
             />
             <TextExtractor
                 onExtract={({ text, elementId }) => {
