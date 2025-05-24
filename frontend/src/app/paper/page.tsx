@@ -4,8 +4,16 @@ import { useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import GazeTracker from '@/components/GazeTracker';
-// Dynamically import the PaperViewer component with SSR disabled
+
+// Dynamically import components with SSR disabled
+const GazeTracker = dynamic(
+  () => import('@/components/GazeTracker'),
+  { 
+    ssr: false,
+    loading: () => null // Don't show loading indicator for GazeTracker
+  }
+);
+
 const PaperViewer = dynamic(
   () => import('@/components/PaperViewer'),
   { 
