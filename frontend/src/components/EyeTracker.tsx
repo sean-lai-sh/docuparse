@@ -44,6 +44,8 @@ const EyeTracker: React.FC<EyeTrackerProps> = ({
   const [isTracking, setIsTracking] = useState<boolean>(false);
   const [isWebGazerReady, setIsWebGazerReady] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [gazeHistory, setGazeHistory] = useState<Array<{ x: number; y: number }>>([]);
+  const [showHeatmap, setShowHeatmap] = useState<boolean>(false);
   
   const svgRef = useRef<SVGSVGElement>(null);
   const calibrationTimeoutRef = useRef<NodeJS.Timeout>();
@@ -114,6 +116,7 @@ const EyeTracker: React.FC<EyeTrackerProps> = ({
         .setGazeListener((data: { x: number; y: number } | null) => {
           if (data && data.x && data.y) {
             setGazePosition({ x: data.x, y: data.y });
+            setGazeHistory(prev => [...prev, { x: data.x, y: data.y }]);
             if (onGazeUpdate) {
               onGazeUpdate(data.x, data.y);
             }
@@ -231,23 +234,34 @@ const EyeTracker: React.FC<EyeTrackerProps> = ({
 
   // Draw single gaze dot using D3 (fixed trailing dots issue)
   useEffect(() => {
-    if (!showGazeDot || !gazePosition || !svgRef.current) return;
-
+    if (!svgRef.current) return;
     const svg = d3.select(svgRef.current);
-    
-    // Remove all existing dots
     svg.selectAll('.gaze-dot').remove();
-    
-    // Add single new dot
-    svg.append('circle')
-      .attr('class', 'gaze-dot')
-      .attr('cx', gazePosition.x)
-      .attr('cy', gazePosition.y)
-      .attr('r', dotSize / 2)
-      .attr('fill', dotColor)
-      .style('pointer-events', 'none');
+    svg.selectAll('.heatmap-dot').remove();
 
-  }, [gazePosition, showGazeDot, dotSize, dotColor]);
+    // Draw heatmap if enabled
+    if (showHeatmap && gazeHistory.length > 0) {
+      gazeHistory.forEach(({ x, y }) => {
+        svg.append('circle')
+          .attr('class', 'heatmap-dot')
+          .attr('cx', x)
+          .attr('cy', y)
+          .attr('r', 30)
+          .attr('fill', 'rgba(255,0,0,0.08)');
+      });
+    }
+
+    // Draw gaze dot if enabled
+    if (showGazeDot && gazePosition) {
+      svg.append('circle')
+        .attr('class', 'gaze-dot')
+        .attr('cx', gazePosition.x)
+        .attr('cy', gazePosition.y)
+        .attr('r', dotSize / 2)
+        .attr('fill', dotColor)
+        .style('pointer-events', 'none');
+    }
+  }, [gazePosition, showGazeDot, dotSize, dotColor, showHeatmap, gazeHistory]);
 
   if (error) {
     return (
@@ -339,6 +353,41 @@ const EyeTracker: React.FC<EyeTrackerProps> = ({
           {isCalibrating
             ? `Calibrating (${currentCalibrationPoint + 1}/${calibrationPoints.length})`
             : 'Start Calibration'}
+        </button>
+
+        <button
+          onClick={() => setShowHeatmap(hm => !hm)}
+          style={{
+            padding: '10px 18px',
+            fontSize: '15px',
+            fontWeight: '500',
+            backgroundColor: showHeatmap ? '#f44336' : '#1976d2',
+            color: 'white',
+            border: 'none',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+        >
+          {showHeatmap ? 'Hide Heatmap' : 'Show Heatmap'}
+        </button>
+
+        <button
+          onClick={() => setGazeHistory([])}
+          style={{
+            padding: '10px 18px',
+            fontSize: '15px',
+            fontWeight: '500',
+            backgroundColor: '#ff9800',
+            color: 'white',
+            border: 'none',
+            borderRadius: '16px',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+          }}
+          disabled={gazeHistory.length === 0}
+        >
+          Clear Heatmap
         </button>
 
         {gazePosition && (
