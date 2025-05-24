@@ -4,6 +4,7 @@ import PaperViewer from './PaperViewer'
 import TextHoverExtractor from './TextExtractor'
 import AgentPanel from './AgentPanel';
 import TextExtractor from './gptextractor';
+import GazeTracker from './GazeTracker';
 
 interface DymPaperProps {
     slug: string;
@@ -112,6 +113,7 @@ export default function DymPaper({ slug }: DymPaperProps) {
 
     return (
         <div className="w-screen pt-[20vh] min-h-screen">
+            {/* <GazeTracker /> */}
             <PaperViewer 
                 paperPath={`${htmlContent ? htmlContent : '/sample-paper.html'}`}
             />

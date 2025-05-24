@@ -79,7 +79,7 @@ const AgentPanel = () => {
            
             {content && <div className='ml-2 max-w-[20vw]
             mt-4
-            w-full bg-slate-50 shadow-md shadow-black border border-slate-500 h-[40vh] text-white'>
+            w-full bg-slate-50 shadow-md shadow-black border border-slate-500 h-[40vh] text-black'>
                 {content}
             </div>}
         </div>

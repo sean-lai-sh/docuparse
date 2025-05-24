@@ -1,4 +1,4 @@
-import AgentPanel from '@/components/AgentPanel';
+
 import dynamic from 'next/dynamic'
 
 interface PageProps {
