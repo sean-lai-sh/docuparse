@@ -128,10 +128,11 @@ async def query(req: QueryRequest):
     with open("log.txt", "a", encoding="utf-8") as f:
         f.write(f"Query: {req.question}\n")
         f.write(f"Top {TOP_K} chunks:\n")
-        for row in res.data:
-            f.write(f"- {row['content']}\n")
+        for row in res:
+            
+            f.write(f"- {row}\n")
         f.write("\n")
-    top_chunks = [row["content"] for row in res.data]
+    top_chunks = [row["id"] for row in res.data]
     context = "\n---\n".join(top_chunks)
 
     prompt = f"Answer the following question using the provided context.\nContext:\n{context}\n\nQuestion: {req.question}\nAnswer:"

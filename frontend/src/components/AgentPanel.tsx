@@ -22,7 +22,7 @@ const AgentPanel = () => {
         while (mounted) {
             try {
             // Simulate API call
-            const res = await fetch(`http://localhost:8000/query?question=${encodeURIComponent('Help me understand the paper and analyze the meaning of important semantics?')}`,{
+            const res = await fetch(`http://localhost:8000/query`,{
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
