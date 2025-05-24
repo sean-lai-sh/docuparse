@@ -79,7 +79,7 @@ export default function DymPaper({ slug }: DymPaperProps) {
     }
 
     return (
-        <div className="w-screen flex justify-center">
+        <div className="w-screen flex justify-center pt-[20vh]">
             <PaperViewer 
                 paperPath={htmlContent}
             />
