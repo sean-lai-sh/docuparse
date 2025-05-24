@@ -12,14 +12,12 @@ import NewsletterSection from '@/components/NewsletterSection';
 export default function PaperPage() {
   return (
     <main className="min-h-screen flex flex-col">
-      <Navbar />
       <HeroSection />
       <FeaturesSection />
       <HowItWorksSection />
       <TestimonialsSection />
       <PricingSection />
       <NewsletterSection />
-      <Footer />
     </main>
   );
 }

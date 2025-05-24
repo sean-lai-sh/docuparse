@@ -1,1 +1,6 @@
-{}
+{
+  "/page": "app/page.js",
+  "/paper/page": "app/paper/page.js",
+  "/paper/[...slug]/page": "app/paper/[...slug]/page.js",
+  "/api/pdfparser/route": "app/api/pdfparser/route.js"
+}

@@ -16,8 +16,8 @@ export default function Page({ params }: PageProps) {
   const { slug } = params;
   
   return (
-    <main className="min-h-screen flex flex-col bg-gray-50"> 
-        <Dympaper slug={slug}/>
+    <main className="min-h-screen w-screen flex"> 
+        <Dympaper slug={`${slug}`}/>
     </main>
   );
 }
