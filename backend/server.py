@@ -26,6 +26,10 @@ app.add_middleware(
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_ANON_KEY")
+SYSPROMPT = ""
+with open("sysprompt.txt", "r", encoding="utf-8") as f:
+    SYSPROMPT = f.read()
+
 
 openai.api_key = OPENAI_API_KEY
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -81,6 +85,18 @@ async def ingest(req: IngestRequest):
 async def fastingest(req: FastIngestRequest):
     chunks = chunk_text(req.text)
     for chunk in chunks:
+        safe_chunk = chunk.replace("'", "''")
+        sql = f"""
+            select id
+            from vector_data
+            where content = '{safe_chunk}'
+            limit {TOP_K};
+        """
+
+        res = supabase.rpc("execute_sql", {"sql": sql}).execute()
+        if res.data:
+            # If chunk already exists, skip embedding
+            continue
         embedding = await get_embedding(chunk)
         # Store in Supabase
         supabase.table("vector_data").insert({
@@ -108,7 +124,7 @@ async def query(req: QueryRequest):
     prompt = f"Answer the following question using the provided context.\nContext:\n{context}\n\nQuestion: {req.question}\nAnswer:"
     completion = await openai.ChatCompletion.acreate(
         model="gpt-3.5-turbo",
-        messages=[{"role": "user", "content": prompt}]
+        messages=[{'role' :'system', 'content' : SYSPROMPT},{"role": "user", "content": prompt}]
     )
     answer = completion["choices"][0]["message"]["content"]
     return JSONResponse({"status": "success", "answer": answer, "context": top_chunks})
