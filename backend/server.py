@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from bs4 import BeautifulSoup
 import openai
 from supabase import create_client, Client
@@ -11,6 +12,15 @@ import numpy as np
 load_dotenv()
 
 app = FastAPI()
+
+# Middleware for CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Load environment variables
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -26,6 +36,12 @@ TOP_K = 5
 
 class IngestRequest(BaseModel):
     html: str
+    url: str
+    document_id: str
+
+
+class FastIngestRequest(BaseModel):
+    text: str
     url: str
     document_id: str
 
@@ -53,6 +69,20 @@ async def get_embedding(text: str):
 async def ingest(req: IngestRequest):
     text = extract_text_from_html(req.html)
     chunks = chunk_text(text)
+    for chunk in chunks:
+        embedding = await get_embedding(chunk)
+        # Store in Supabase
+        supabase.table("vector_data").insert({
+            "url": req.url,
+            "content": chunk,
+            "document_id": req.document_id,
+            "embedding": embedding
+        }).execute()
+    return JSONResponse({"status": "success", "chunks": len(chunks)})
+
+app.post("/fastingest")
+async def fastingest(req: FastIngestRequest):
+    chunks = chunk_text(req.text)
     for chunk in chunks:
         embedding = await get_embedding(chunk)
         # Store in Supabase
