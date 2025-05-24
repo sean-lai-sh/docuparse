@@ -11,14 +11,22 @@ interface DymPaperProps {
 
 export default function DymPaper({ slug }: DymPaperProps) {
     const hoverDelay = 50; // Delay in milliseconds before extracting text
-    const [textContent, setTextContent] = useState<string | null>(null);
-    const [htmlContent, setHtmlContent] = useState<string>('');
+    const [textContent, setTextContent] = useState<string>('');
+    const [prevContent, setprevContent] = useState<string>('');
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>('');
 
     async function addContext(text: string, elementId: string | null) {
         console.log('Hovered Text:', text);
         console.log('From Element ID:', elementId);
+        // dont add if prev = textContent
+        if (prevContent === text){
+            return;
+        }
+        setprevContent(text);
+        setTextContent(prev => prev + `\n\n${text}`);
+
+        if (!text || text.length > 1500) return; // Skip empty or too long texts
         try {
             const res = await fetch('http://localhost:8000/fastingest', {
                 method: 'POST',
@@ -26,9 +34,8 @@ export default function DymPaper({ slug }: DymPaperProps) {
                 'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                text: text,
-                url: slug,
-                document_id: elementId,
+                text: textContent,
+               id: slug +  elementId,
                 }),
             });
             
@@ -39,6 +46,8 @@ export default function DymPaper({ slug }: DymPaperProps) {
             
             const data = await res.json();
             console.log('✅ Server responded:', data);
+            // Remove the text from the state after sending it
+            setTextContent('');
             } catch (err) {
             console.error('❌ Error calling /fastingest:', err);
             }
@@ -115,3 +124,4 @@ export default function DymPaper({ slug }: DymPaperProps) {
         </div>
     )
 }
+

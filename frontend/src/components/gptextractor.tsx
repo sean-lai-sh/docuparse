@@ -9,7 +9,7 @@ interface ExtractedItem {
 }
 
 interface TextExtractorProps {
-  onExtract?: (item: ExtractedItem) => void;
+  onExtract: (item: ExtractedItem) => void;
   maxItems?: number;
   hoverDelay?: number;
 }
@@ -20,7 +20,7 @@ interface TextExtractorProps {
 export const TextExtractor = ({
   onExtract,
   maxItems = 10,
-  hoverDelay = 300,
+  hoverDelay = 3000,
 }: TextExtractorProps) => {
   const [items, setItems] = useState<ExtractedItem[]>([]);
   const [timeoutId, setTimeoutId] = useState<number | null>(null);
@@ -55,13 +55,15 @@ export const TextExtractor = ({
         elementId: getDomPath(el as Element) || null,
         timestamp: Date.now(),
       };
-
+      
       setItems(prev => {
         const updated = [...prev, item].slice(-maxItems);
         return updated;
       });
+      // Have 300 ms delay before calling onExtract
+      onExtract(item);
 
-      onExtract?.(item);
+      console.log('Extracted:', item);
     }, hoverDelay);
 
     setTimeoutId(newTimeout);

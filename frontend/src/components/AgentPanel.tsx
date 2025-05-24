@@ -6,6 +6,7 @@ const AgentPanel = () => {
     const [isOpen, setIsOpen] = useState(true);
     const [showThinking, setShowThinking] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
+    const [content, setContent] = useState<string>('');
 
     useEffect(() => {
         const handleScroll = () => {
@@ -21,8 +22,30 @@ const AgentPanel = () => {
         while (mounted) {
             try {
             // Simulate API call
-            await fetch('/api/nothing');
-
+            const res = await fetch(`http://localhost:8000/query?question=${encodeURIComponent('Help me understand the paper and analyze the meaning of important semantics?')}`,{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    question: 'Help me understand the paper and analyze the meaning of important semantics?',
+                  
+                }),
+            });
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            const data = await res.json();
+            console.log('API Response:', data);
+            console.log(data.answer)
+            if(!data.answer){
+                console.warn('No answer received from API');
+            }else{
+                console.log('Received answer:', data.answer);
+            }
+            // Update content state
+            setContent(data.answer || 'No content available');
+            console.log('Content updated:', content);
             // Arbitrary delay
             await new Promise(res => setTimeout(res, 1000));
 
@@ -47,14 +70,14 @@ const AgentPanel = () => {
     }, []);
     return (
         <div className={`w-screen fixed top-[10vh] z-50 ${isScrolled ? ' opacity-100' : 'opacity-0'} transition-all duration-1000 linear `}>
-            <div className='w-48 h-[3.25rem] rounded-full bg-blue-600/40 flex items-center justify-center shadow-md shadow-black ml-2'>
-                <div className='inset-2 h-10 bg-gradient-to-tr from-slate-600 to-black flex flex-row w-[95%] items-center rounded-full'>
+            <div className='w-48 h-[3.25rem] rounded-t-full bg-blue-600/40 flex items-center justify-center shadow-md shadow-black ml-2'>
+                <div className='inset-2 h-10 bg-gradient-to-tr from-slate-600 to-black flex flex-row w-[95%] items-center rounded-t-full  '>
                     <div className='w-5 h-5 rounded-full bg-gradient-to-tr from-white to-slate-700 ml-2'/>
                     <ThinkingDots isThinking={isOpen} showThinking={showThinking}/>
                 </div>
             </div>
-            <div>
-
+            <div className='max-w-[20vw] w-full bg-black h-[40vh] text-white'>
+                {content}
             </div>
         </div>
     )
