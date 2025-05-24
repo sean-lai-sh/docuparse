@@ -36,14 +36,12 @@ TOP_K = 5
 
 class IngestRequest(BaseModel):
     html: str
-    url: str
-    document_id: str
+    id: str
 
 
 class FastIngestRequest(BaseModel):
     text: str
-    url: str
-    document_id: str
+    id: str
 
 class QueryRequest(BaseModel):
     question: str
@@ -73,9 +71,8 @@ async def ingest(req: IngestRequest):
         embedding = await get_embedding(chunk)
         # Store in Supabase
         supabase.table("vector_data").insert({
-            "url": req.url,
+            "id": req.id,
             "content": chunk,
-            "document_id": req.document_id,
             "embedding": embedding
         }).execute()
     return JSONResponse({"status": "success", "chunks": len(chunks)})
@@ -87,9 +84,8 @@ async def fastingest(req: FastIngestRequest):
         embedding = await get_embedding(chunk)
         # Store in Supabase
         supabase.table("vector_data").insert({
-            "url": req.url,
+            "id": req.id,
             "content": chunk,
-            "document_id": req.document_id,
             "embedding": embedding
         }).execute()
     return JSONResponse({"status": "success", "chunks": len(chunks)})
@@ -99,7 +95,7 @@ async def query(req: QueryRequest):
     query_embedding = await get_embedding(req.question)
     # Query Supabase for top 5 similar chunks using pgvector's <-> operator
     sql = f"""
-        select content, url, document_id, embedding
+        select content, id, embedding
         from vector_data
         order by embedding <-> '{query_embedding}'
         limit {TOP_K};
