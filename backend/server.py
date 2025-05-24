@@ -80,7 +80,7 @@ async def ingest(req: IngestRequest):
         }).execute()
     return JSONResponse({"status": "success", "chunks": len(chunks)})
 
-app.post("/fastingest")
+@app.post("/fastingest")
 async def fastingest(req: FastIngestRequest):
     chunks = chunk_text(req.text)
     for chunk in chunks:
