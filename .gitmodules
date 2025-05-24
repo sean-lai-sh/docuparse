@@ -1,0 +1,3 @@
+[submodule "eyetrack/eyetrack/eyegotchu"]
+	path = eyetrack/eyetrack/eyegotchu
+	url = https://github.com/sahisagiraju/eyegotchu/

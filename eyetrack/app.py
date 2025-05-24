@@ -2,8 +2,8 @@ import streamlit as st
 import fitz  # PyMuPDF
 import numpy as np
 import cv2
-from eyeGestures.utils import VideoCapture
-from eyeGestures import EyeGestures_v3
+from l2cs import Pipeline, render as render_gaze  # <-- L2CS import
+import torch
 import tempfile
 
 st.set_page_config(page_title="PDF Eye Tracking Heatmap", layout="wide")
@@ -26,10 +26,15 @@ if pdf_file:
         img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
     st.image(img, channels="RGB", caption="First page of PDF")
 
-    # 2. Eye Tracking Setup
-    gestures = EyeGestures_v3()
-    cap = VideoCapture(0)
-    calibrate = True
+    # 2. Eye Tracking Setup (L2CS)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    gaze_weights = "eyegotchu/ai/models/Gaze360/L2CSNet_gaze360.pkl"  # adjust path if needed
+    gaze_pipeline = Pipeline(
+        weights=gaze_weights,
+        arch="ResNet50",
+        device=device
+    )
+    cap = cv2.VideoCapture(0)
     screen_width, screen_height = img.shape[1], img.shape[0]
     heatmap = np.zeros((screen_height, screen_width), dtype=np.float32)
 
@@ -80,11 +85,19 @@ if pdf_file:
             if not ret:
                 st.error("Webcam not found.")
                 break
-            event, cevent = gestures.step(frame, calibrate, screen_width, screen_height, context="pdf")
-            if event:
-                x, y = int(event.point[0]), int(event.point[1])
-                if 0 <= x < screen_width and 0 <= y < screen_height:
-                    st.session_state['heatmap'][y, x] += 1
+            # --- L2CS Gaze Estimation ---
+            try:
+                gaze_res = gaze_pipeline.step(frame)
+                if gaze_res.pitch.size:
+                    pitch = float(gaze_res.pitch[0])
+                    yaw = float(gaze_res.yaw[0])
+                    # Map yaw/pitch to PDF image coordinates
+                    x = int(((yaw/np.pi)+1)/2 * screen_width)
+                    y = int(((pitch/np.pi)+1)/2 * screen_height)
+                    if 0 <= x < screen_width and 0 <= y < screen_height:
+                        st.session_state['heatmap'][y, x] += 1
+            except Exception as e:
+                st.error(f"Gaze estimation error: {e}")
             # Overlay heatmap
             heatmap_norm = st.session_state['heatmap']
             if np.max(heatmap_norm) > 0:
