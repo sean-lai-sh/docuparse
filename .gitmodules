@@ -1,6 +1,10 @@
+
 [submodule "eyetrack/eyetrack/eyegotchu"]
 	path = eyetrack/eyetrack/eyegotchu
 	url = https://github.com/sahisagiraju/eyegotchu/
 [submodule "eyetrack/eyegotchu"]
 	path = eyetrack/eyegotchu
 	url = https://github.com/sahisagiraju/eyegotchu.git
+[submodule "backend/dex-mcp"]
+	path = backend/dex-mcp
+	url = https://github.com/kevinrgu/dex-mcp.git
