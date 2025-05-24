@@ -360,7 +360,7 @@ const EyeTracker: React.FC<EyeTrackerProps> = ({
   }, []);
 
   // Take a screenshot of an area around a point
-  const captureAreaScreenshot = useCallback(async (x: number, y: number, width = 300, height = 300) => {
+  const captureAreaScreenshot = useCallback(async (x: number, y: number, width = 400, height = 200) => {
     if (screenshotCooldown.current || typeof document === 'undefined') return null;
     
     let cooldownTimer: NodeJS.Timeout | null = null;
