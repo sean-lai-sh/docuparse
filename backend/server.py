@@ -89,7 +89,7 @@ async def fastingest(req: FastIngestRequest):
     for chunk in chunks:
         safe_chunk = chunk.replace("'", "''")
         sql = f"""
-            select id
+            select id, content, embedding
             from vector_data
             where content = '{safe_chunk}'
             limit {TOP_K};
