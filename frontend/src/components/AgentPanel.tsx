@@ -1,9 +1,10 @@
 'use client'
 import React, { useEffect, useState } from 'react'
-import {motion} from 'framer-motion'
+import {motion, Variants} from 'framer-motion'
 
 const AgentPanel = () => {
     const [isOpen, setIsOpen] = useState(true);
+    const [showThinking, setShowThinking] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
 
     useEffect(() => {
@@ -14,16 +15,42 @@ const AgentPanel = () => {
             setIsScrolled(false);
         }
         };
+        let mounted = true;
 
+        const loop = async () => {
+        while (mounted) {
+            try {
+            // Simulate API call
+            await fetch('/api/nothing');
+
+            // Arbitrary delay
+            await new Promise(res => setTimeout(res, 1000));
+
+            // Toggle state
+            setIsOpen(prev => !prev);
+            setShowThinking(prev => !prev);
+            } catch (err) {
+            console.warn('Error during async loop:', err);
+            }
+
+            // Wait before next cycle
+            await new Promise(res => setTimeout(res, 3000));
+        }
+        };
+        loop();
         window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll)
+            mounted = false; // Cleanup to stop the loop
+        }
+        ;
     }, []);
     return (
         <div className={`w-screen fixed top-[10vh] z-50 ${isScrolled ? ' opacity-100' : 'opacity-0'} transition-all duration-1000 linear `}>
             <div className='w-48 h-[3.25rem] rounded-full bg-blue-600/40 flex items-center justify-center shadow-md shadow-black ml-2'>
                 <div className='inset-2 h-10 bg-gradient-to-tr from-slate-600 to-black flex flex-row w-[95%] items-center rounded-full'>
                     <div className='w-5 h-5 rounded-full bg-gradient-to-tr from-white to-slate-700 ml-2'/>
-                    <ThinkingDots isThinking={isOpen} />
+                    <ThinkingDots isThinking={isOpen} showThinking={showThinking}/>
                 </div>
             </div>
             <div>
@@ -36,35 +63,51 @@ const AgentPanel = () => {
 export default AgentPanel
 
 
-function ThinkingDots({ isThinking }: { isThinking: boolean }) {
-    const bounce = {
-        y: [0, -10, 0, 0], // last 0 adds a pause at bottom
-      };
-    
-      const transition = {
+function ThinkingDots({ isThinking, showThinking }: { isThinking: boolean, showThinking?: boolean }) {
+  const getVariant = () => {
+    if (isThinking) return 'thinking';
+    if (showThinking) return 'subtle';
+    return 'idle';
+  };
+
+  const dotVariants: Variants = {
+    initial: { y: 0,x:0 },
+  
+    thinking: (custom: number) => ({
+      y: [0, -10, 0, 0],
+      transition: {
         duration: 0.8,
         repeat: Infinity,
+        ease: 'easeIn',
+        times: [0, 0.1, 0.3, 1],
+        delay: custom,
+      },
+    }),
+  
+    subtle: (custom: number) => ({
+      x: [0, 100 + (3 - custom) * 75],
+      transition: {
+        duration: 1.2,
+       
         ease: 'easeInOut',
-        times: [0, 0.1, 0.3, 1], // controls keyframe pacing
-      };
+      },
+    }),
+  
+    idle: { y: 0 },
+  }
 
   return (
-    <div className="flex gap-2 items-end px-5">
-      <motion.div
-        className="w-1 h-1 rounded-full bg-white"
-        animate={isThinking ? bounce : { y: 0 }}
-        transition={{ ...transition, delay: 0 }}
-      />
-      <motion.div
-        className="w-1 h-1 rounded-full bg-white"
-        animate={isThinking ? bounce : { y: 0 }}
-        transition={{ ...transition, delay: 0.1 }}
-      />
-      <motion.div
-        className="w-1 h-1 rounded-full bg-white"
-        animate={isThinking ? bounce : { y: 0 }}
-        transition={{ ...transition, delay: 0.2 }}
-      />
+    <div className="flex gap-2 items-end ml-2">
+      {[0, 1, 2].map((i) => (
+        <motion.div
+          key={i}
+          className="w-1 h-1 rounded-full bg-white"
+          variants={dotVariants}
+          initial="initial"
+          animate={getVariant()}
+          custom={i*0.15}
+        />
+      ))}
     </div>
   );
 }
