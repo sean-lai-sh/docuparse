@@ -9,9 +9,11 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 import numpy as np
 
+
 load_dotenv()
 
 app = FastAPI()
+
 
 # Middleware for CORS
 app.add_middleware(
@@ -106,9 +108,9 @@ async def fastingest(req: FastIngestRequest):
         }).execute()
     return JSONResponse({"status": "success", "chunks": len(chunks)})
 
-@app.post("/query")
-async def query(req: QueryRequest):
-    query_embedding = await get_embedding(req.question)
+@app.get("/query")
+async def query(question: str):
+    query_embedding = await get_embedding(question)
     # Query Supabase for top 5 similar chunks using pgvector's <-> operator
     sql = f"""
         select content, id, embedding
@@ -116,11 +118,13 @@ async def query(req: QueryRequest):
         order by embedding <-> '{query_embedding}'
         limit {TOP_K};
     """
+    
     res = supabase.rpc("execute_sql", {"sql": sql}).execute()
     if not res.data:
         return JSONResponse({"status": "error", "message": "No similar content found."}, status_code=404)
     top_chunks = [row["content"] for row in res.data]
     context = "\n---\n".join(top_chunks)
+
     prompt = f"Answer the following question using the provided context.\nContext:\n{context}\n\nQuestion: {req.question}\nAnswer:"
     completion = await openai.ChatCompletion.acreate(
         model="gpt-3.5-turbo",
@@ -128,3 +132,4 @@ async def query(req: QueryRequest):
     )
     answer = completion["choices"][0]["message"]["content"]
     return JSONResponse({"status": "success", "answer": answer, "context": top_chunks})
+
