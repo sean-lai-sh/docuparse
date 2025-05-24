@@ -114,7 +114,7 @@ async def query(req: QueryRequest):
     query_embedding = await get_embedding(req.question)
     # Query Supabase for top 5 similar chunks using pgvector's <-> operator
     sql = f"""
-        select content, id, embedding
+        select id, content, embedding
         from vector_data
         order by embedding <-> '{query_embedding}'
         limit {TOP_K};
@@ -132,7 +132,7 @@ async def query(req: QueryRequest):
             
             f.write(f"- {row}\n")
         f.write("\n")
-    top_chunks = [row["id"] for row in res.data]
+    top_chunks = [row["content"] for row in res.data]
     context = "\n---\n".join(top_chunks)
 
     prompt = f"Answer the following question using the provided context.\nContext:\n{context}\n\nQuestion: {req.question}\nAnswer:"
