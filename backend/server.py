@@ -134,11 +134,13 @@ async def query(req: QueryRequest):
         f.write("\n")
     top_chunks = [row["content"] for row in res.data]
     context = "\n---\n".join(top_chunks)
-
-    prompt = f"Answer the following question using the provided context.\nContext:\n{context}\n\nQuestion: {req.question}\nAnswer:"
+    
+    with open("exprompt.txt", "r", encoding="utf-8") as f:
+        eprompt = f.read()
+    prompt = f"\nContext:\n{context}\n\nQuestion: {req.question}\nAnswer:"
     completion = await openai.ChatCompletion.acreate(
         model="gpt-3.5-turbo",
-        messages=[{'role' :'system', 'content' : SYSPROMPT},{"role": "user", "content": prompt}],
+        messages=[{'role' :'system', 'content' : SYSPROMPT},{"role": "user", "content":eprompt +  prompt}],
         # tools = [
         #     {
         #         "type": "function",
