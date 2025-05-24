@@ -1,4 +1,0 @@
-{
-  "/api/pdfparser/route": "app/api/pdfparser/route.js",
-  "/paper/[...slug]/page": "app/paper/[...slug]/page.js"
-}
