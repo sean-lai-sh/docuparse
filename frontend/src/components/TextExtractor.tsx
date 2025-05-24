@@ -1,5 +1,6 @@
 'use client';
 
+import { MousePointer } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 
 interface HoveredItem {
@@ -50,6 +51,11 @@ interface TextHoverExtractorProps {
    * @default 5
    */
   maxHistoryItems?: number;
+
+  /**
+   * Slug or identifier for the current paper
+   */
+  slug?: string;
 }
 
 /**
@@ -66,6 +72,7 @@ export const TextHoverExtractor = ({
   enabled = true,
   historyDuration = 5000,
   maxHistoryItems = 5,
+  slug = ''
 }: TextHoverExtractorProps) => {
   const [hoveredItems, setHoveredItems] = useState<HoveredItem[]>([]);
   const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
@@ -114,13 +121,18 @@ export const TextHoverExtractor = ({
     }
     
     // Set a new timeout
-    const timeout = window.setTimeout(() => {
+    const timeout = window.setTimeout(async () => {
       const element = document.elementFromPoint(e.clientX, e.clientY);
       
       if (element) {
+        console.log('Hovered element:', element.id);
         const text = extractTextContent(element);
         
         if (text) {
+          /// do not add items >= 150 characters
+          if (text.length >= 150) {
+            return; // Skip adding long text
+          }
           // Add to history if text is not empty
           const newItem: HoveredItem = {
             text,
@@ -144,7 +156,47 @@ export const TextHoverExtractor = ({
             const newItems = [...prevItems, newItem];
             return newItems.slice(-maxHistoryItems);
           });
-          
+
+        
+
+          /// Call our fancy api
+          let numSlice = hoveredItems.length > 10 ? 10 : hoveredItems.length;
+          /// Aggregate upto the last 10 items
+          const aggregatedText = hoveredItems
+            .slice(numSlice * -1)
+            .map(item => item.text)
+            .join(' ');
+
+          const path = getDomPath(hoveredItems[0].element)
+
+          console.log('Aggregated text:', aggregatedText);
+          console.log('Hovered items:', slug);
+          console.log('document_id:', path);
+
+            try {
+              const res = await fetch('http://localhost:8000/fastingest', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  text: aggregatedText,
+                  url: slug,
+                  document_id: '',
+                }),
+              });
+            
+              if (!res.ok) {
+                const errorText = await res.text(); // fallback for non-JSON errors
+                throw new Error(`Server error ${res.status}: ${errorText}`);
+              }
+            
+              const data = await res.json();
+              console.log('✅ Server responded:', data);
+            } catch (err) {
+              console.error('❌ Error calling /fastingest:', err);
+            }
+            
           setModalPosition({ 
             x: e.clientX + 15, // Offset to not cover the cursor
             y: e.clientY + 15
@@ -209,18 +261,15 @@ export const TextHoverExtractor = ({
 
   return (
     <div 
-      className={`fixed z-50 p-3 bg-white border rounded shadow-lg ${modalClassName}`}
+      className={`fixed z-50 rounded-full bg-blue/600 w-1 h-1 mt-1 shadow-lg ${modalClassName}`}
       style={{
         left: `${modalPosition.x}px`,
         top: `${modalPosition.y}px`,
         transform: 'translate(0, 0)',
-        maxWidth: '300px',
-        fontSize: '14px',
-        lineHeight: '1.4',
-        wordBreak: 'break-word'
       }}
     >
-      <div className="text-sm font-medium mb-2">Text Content History:</div>
+      {/* <MousePointer/> */}
+      {/* <div className="text-sm font-medium mb-2">Text Content History:</div>
       <div className="space-y-2">
         {hoveredItems.slice().reverse().map((item, index) => (
           <div key={index} className="p-2 bg-gray-50 rounded text-xs">
@@ -234,9 +283,30 @@ export const TextHoverExtractor = ({
       </div>
       <div className="mt-2 text-xs text-gray-500">
         History duration: {historyDuration/1000}s | Max items: {maxHistoryItems}
-      </div>
+      </div> */}
     </div>
   );
 };
 
 export default TextHoverExtractor;
+
+function getDomPath(el: Element): string {
+  const path: string[] = [];
+  while (el && el.nodeType === Node.ELEMENT_NODE) {
+    let selector = el.nodeName.toLowerCase();
+
+    if (el.parentElement) {
+      const siblings = Array.from(el.parentElement.children).filter(
+        sibling => sibling.nodeName === el.nodeName
+      );
+      if (siblings.length > 1) {
+        const index = siblings.indexOf(el);
+        selector += `:nth-of-type(${index + 1})`;
+      }
+    }
+
+    path.unshift(selector);
+    el = el.parentElement!;
+  }
+  return path.join(' > ');
+}

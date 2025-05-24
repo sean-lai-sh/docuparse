@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import PaperViewer from './PaperViewer'
 import TextHoverExtractor from './TextExtractor'
 import AgentPanel from './AgentPanel';
+import TextExtractor from './gptextractor';
 
 interface DymPaperProps {
     slug: string;
@@ -15,13 +16,33 @@ export default function DymPaper({ slug }: DymPaperProps) {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>('');
 
-    const handleTextExtracted = (text: string) => {
-        if (text.length >= 150) {
-            return;
-        }
-        setTextContent(text);
-        console.log('Extracted text:', text);
-    };
+    async function addContext(text: string, elementId: string | null) {
+        console.log('Hovered Text:', text);
+        console.log('From Element ID:', elementId);
+        try {
+            const res = await fetch('http://localhost:8000/fastingest', {
+                method: 'POST',
+                headers: {
+                'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                text: text,
+                url: slug,
+                document_id: elementId,
+                }),
+            });
+            
+            if (!res.ok) {
+                const errorText = await res.text(); // fallback for non-JSON errors
+                throw new Error(`Server error ${res.status}: ${errorText}`);
+            }
+            
+            const data = await res.json();
+            console.log('✅ Server responded:', data);
+            } catch (err) {
+            console.error('❌ Error calling /fastingest:', err);
+            }
+    }
 
     useEffect(() => {
         const convertPdfToHtml = async () => {
@@ -84,14 +105,12 @@ export default function DymPaper({ slug }: DymPaperProps) {
             <PaperViewer 
                 paperPath={`/samplepaper.htm`}
             />
-            <TextHoverExtractor
-                onTextExtracted={handleTextExtracted}
-                showModal={true}
-                modalClassName="bg-white shadow-xl border-gray-200"
-                hoverDelay={hoverDelay}
-                enabled={true}
-                historyDuration={500}
-                maxHistoryItems={500}
+            <TextExtractor
+                onExtract={({ text, elementId }) => {
+                    addContext(text, elementId);
+                }}
+                maxItems={50}
+                hoverDelay={250}
             />
         </div>
     )

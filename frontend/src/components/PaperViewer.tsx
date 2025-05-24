@@ -111,7 +111,7 @@ const createSanitizedHtml = (headContent: string, bodyContent: string): string =
 
 interface PaperViewerProps {
   paperContent?: string;
-  paperPath?: string;
+  paperPath: string;
   textHistoryDuration?: number; // ms
   maxHistoryItems?: number;
   hoverDelay?: number; // ms
@@ -135,164 +135,47 @@ const PaperViewer: React.FC<PaperViewerProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isInspecting, setIsInspecting] = useState(false);
-  const [hoveredElement, setHoveredElement] = useState<HTMLElement | null>(null);
-  const [selectedElement, setSelectedElement] = useState<HTMLElement | null>(null);
-  const [hoveredTextHistory, setHoveredTextHistory] = useState<HoveredTextInfo[]>([]);
-  const [showTextModal, setShowTextModal] = useState(false);
-  const [modalPosition, setModalPosition] = useState({ x: 0, y: 0 });
   const contentRef = useRef<HTMLDivElement>(null);
-  const hoverTimeoutRef = useRef<number | null>(null);
-  const router = useRouter();
-
-  // Clean up expired items from history
-  const cleanupHistory = useCallback(() => {
-    const now = Date.now();
-    setHoveredTextHistory(prevItems => 
-      prevItems
-        .filter(item => now - item.timestamp < textHistoryDuration)
-        .slice(-maxHistoryItems)
-    );
-  }, [textHistoryDuration, maxHistoryItems]);
-
-  // Toggle inspect mode
-  const toggleInspectMode = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsInspecting(prev => !prev);
-    if (!isInspecting) {
-      setHoveredElement(null);
-      setSelectedElement(null);
-      setShowTextModal(false);
-    }
-  };
-
-  // Handle element hover for inspection
-  const handleElementHover = (element: HTMLElement | null) => {
-    setHoveredElement(element);
-  };
-
-  // Handle element click for inspection
-  const handleElementClick = (element: HTMLElement | null) => {
-    if (element) {
-      setSelectedElement(element);
-      console.log('Selected element:', element);
-      console.log('Element info:', getElementMetadata(element));
-    }
-  };
-
-  // Handle mouse movement for text extraction
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (hoverTimeoutRef.current !== null) {
-      window.clearTimeout(hoverTimeoutRef.current);
-    }
-    
-    hoverTimeoutRef.current = window.setTimeout(() => {
-      // Get element at current position
-      const element = document.elementFromPoint(e.clientX, e.clientY) as HTMLElement | null;
-      
-      if (element) {
-        // Skip certain elements
-        const skipTags = ['SCRIPT', 'STYLE', 'HEAD', 'META', 'LINK', 'HTML', 'BODY'];
-        if (skipTags.includes(element.tagName)) {
-          return;
-        }
-        
-        // Extract precise text content
-        const text = extractPreciseTextContent(element);
-        
-        if (text) {
-          // Add to history
-          const newItem: HoveredTextInfo = {
-            text,
-            element,
-            timestamp: Date.now(),
-            metadata: {
-              tagName: element.tagName.toLowerCase(),
-              id: element.id || undefined,
-              className: element.className || undefined
-            }
-          };
-          
-          setHoveredTextHistory(prevItems => {
-            // Check if this text is already the most recent in our history
-            if (prevItems.length > 0 && prevItems[prevItems.length - 1].text === text) {
-              // Update timestamp of existing item instead of adding duplicate
-              const updatedItems = [...prevItems];
-              updatedItems[updatedItems.length - 1] = {
-                ...updatedItems[updatedItems.length - 1],
-                timestamp: Date.now()
-              };
-              return updatedItems;
-            }
-            
-            // Add new item and limit to maxHistoryItems
-            return [...prevItems, newItem].slice(-maxHistoryItems);
-          });
-          
-          // Update modal position
-          setModalPosition({ 
-            x: e.clientX + 15, // Offset to not cover the cursor
-            y: e.clientY + 15
-          });
-          
-          // Show modal
-          setShowTextModal(true);
-        }
-      }
-    }, hoverDelay);
-  }, [hoverDelay, maxHistoryItems]);
-
-  // Set up and clean up event listeners
-  useEffect(() => {
-    // Add mouse move listener for text extraction
-    document.addEventListener('mousemove', handleMouseMove);
-    
-    // Set up interval to clean up expired items
-    const cleanupInterval = setInterval(cleanupHistory, 1000);
-    
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      if (hoverTimeoutRef.current !== null) {
-        window.clearTimeout(hoverTimeoutRef.current);
-      }
-      clearInterval(cleanupInterval);
-    };
-  }, [cleanupHistory, handleMouseMove]);
-
+  
   // Fetch and process paper content
   useEffect(() => {
-    const fetchPaperContent = async () => {
-      try {
+      const fetchPaperContent = async () => {
         let htmlContent = '';
-        
-        if (paperContent) {
-          htmlContent = paperContent;
-        } else if (paperPath) {
-          const response = await fetch(paperPath);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch paper: ${response.statusText}`);
-          }
-          htmlContent = await response.text();
-        } else {
-          throw new Error('No paper content or path provided');
+
+      if (paperContent) {
+        htmlContent = paperContent;
+      } else if (paperPath) {
+        const response = await fetch(paperPath);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch paper: ${response.statusText}`);
         }
-
-        // Parse the HTML content
-        const { headContent, bodyContent } = parseHtmlContent(htmlContent);
-        
-        // Create sanitized HTML
-        const fullContent = createSanitizedHtml(headContent, bodyContent);
-        
-        // Set the full HTML content
-        setContent(fullContent);
-      } catch (err) {
-        console.error('Error loading paper:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load paper');
-      } finally {
-        setIsLoading(false);
+        htmlContent = await response.text();
+      } else {
+        throw new Error('No paper content or path provided');
       }
-    };
 
-    fetchPaperContent();
+      const { headContent, bodyContent } = parseHtmlContent(htmlContent);
+      const fullContent = createSanitizedHtml(headContent, bodyContent);
+      setContent(fullContent);
+      console.log(`Paper content loaded from ${paperPath || 'inline content'}`);
+
+      setIsLoading(false);
+      
+    }
+      fetchPaperContent();
+      // setTimeout(() => {
+      // },100);
+      // const root = document.getElementById('paper-root'); // or wherever you inject `fullContent`
+      // if (!root) {
+      //   setError('Paper root element not found');
+        
+      //   return;
+      // }
+      // if (root && paperPath) {
+      //   console.log(`Assigning deterministic IDs for paper: ${paperPath}`);
+      //   assignDeterministicElementIds(root, paperPath);
+      // }
+      
   }, [paperContent, paperPath]);
 
   // Loading state
@@ -325,100 +208,20 @@ const PaperViewer: React.FC<PaperViewerProps> = ({
   return (
     <div className="w-full relative max-w-full ">
       <AgentPanel/>
-      {/* Inspector controls */}
-      <div className="fixed bottom-4 right-4 z-50 flex gap-2">
-        <button
-          onClick={toggleInspectMode}
-          className={`px-4 py-2 rounded-md font-medium ${
-            isInspecting 
-              ? 'bg-red-500 hover:bg-red-600 text-white' 
-              : 'bg-blue-500 hover:bg-blue-600 text-white'
-          } transition-colors`}
-        >
-          {isInspecting ? 'Exit Inspect Mode' : 'Inspect Elements'}
-        </button>
-        
-        {hoveredElement && isInspecting && (
-          <div className="bg-gray-800 text-white text-sm p-2 rounded-md shadow-lg max-w-xs">
-            <div className="font-mono">
-              <div>Tag: &lt;{hoveredElement.tagName.toLowerCase()}&gt;</div>
-              {hoveredElement.id && <div>ID: {hoveredElement.id}</div>}
-              {hoveredElement.className && (
-                <div>Class: {hoveredElement.className}</div>
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-      
-      {/* Text extraction modal */}
-      {showTextModal && hoveredTextHistory.length > 0 && (
-        <div 
-          className="fixed z-50 p-3 bg-white border rounded shadow-lg"
-          style={{
-            left: `${modalPosition.x}px`,
-            top: `${modalPosition.y}px`,
-            maxWidth: '300px',
-            fontSize: '14px',
-            lineHeight: '1.4',
-            wordBreak: 'break-word'
-          }}
-        >
-          <div className="text-sm font-medium mb-2">Text Content:</div>
-          <div className="space-y-2">
-            {hoveredTextHistory.slice().reverse().map((item, index) => (
-              <div key={index} className="p-2 bg-gray-50 rounded text-xs">
-                <div className="font-medium text-gray-700">
-                  {new Date(item.timestamp).toLocaleTimeString()} 
-                  {index === 0 && <span className="ml-1 text-green-600">(Current)</span>}
-                </div>
-                <div className="mt-1">{item.text}</div>
-                {item.metadata && (
-                  <div className="mt-1 text-gray-500 text-xs">
-                    &lt;{item.metadata.tagName}&gt;
-                    {item.metadata.id && ` #${item.metadata.id}`}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="mt-2 text-xs text-gray-500">
-            History: {textHistoryDuration/1000}s | Max items: {maxHistoryItems}
-          </div>
-        </div>
-      )}
-      
-      {/* DOM Highlighter */}
-      {isInspecting && (
-        <DOMHighlighter
-          enabled={isInspecting}
-          onElementHover={handleElementHover}
-          onClick={handleElementClick}
-          highlightColor="rgba(147, 197, 253, 0.3)"
-          borderColor="rgba(59, 130, 246, 0.8)"
-          excludedSelectors={['script', 'style', 'head', 'meta', 'link']}
-        />
-      )}
-      
       {/* Paper content */}
       <div 
         ref={contentRef}
+        id='paper-root'
         className="w-full max-w-full overflow-x-auto box-border"
         style={{ width: '100%', maxWidth: '100%' }}
         dangerouslySetInnerHTML={{ __html: content }}
       />
       
-      {/* Debug info panel (optional) */}
-      {selectedElement && (
-        <div className="fixed bottom-0 left-0 w-full bg-gray-900 text-white p-4 z-40 max-h-64 overflow-y-auto">
-          <h3 className="text-lg font-bold mb-2">Element Info</h3>
-          <pre className="text-xs bg-gray-800 p-2 rounded">
-            {JSON.stringify(getElementMetadata(selectedElement), null, 2)}
-          </pre>
-        </div>
-      )}
+     
     </div>
   );
 };
 
 export default PaperViewer;
+
+
