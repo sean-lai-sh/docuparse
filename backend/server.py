@@ -124,6 +124,11 @@ async def query(req: QueryRequest):
     if not res.data:
         return JSONResponse({"status": "error", "message": "No similar content found."}, status_code=404)
     # Write to log.txt
+    print(f"Query: {req.question}\n")
+    print(f"Top {TOP_K} chunks:\n")
+    for row in res:
+        print(f"- {row}\n")
+    print("\n")
 
     with open("log.txt", "a", encoding="utf-8") as f:
         f.write(f"Query: {req.question}\n")
